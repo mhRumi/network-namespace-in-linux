@@ -29,8 +29,24 @@
 নেটওয়ার্ক নেমস্পেস তৈরি করার কমান্ড
 
 ```bash
-# আমরা রেড নামের একটি নেমস্পেস তৈরি করছি 
+# আমরা রেড এবং ব্লু নামের দুটি নেমস্পেস তৈরি করছি 
 sudo ip netns add red
+sudo ip netns add blue
 # command to see network namespace
 ip netns
+# to see interfaces under the namespace
+ip netns exec red ip link
 ```
+
+![namespace](./images/network-ns.png)
+
+আমরা যেদুটি নেমস্পেস তৈরি করেছি এগুলোর কাছে হোস্টের নেটওয়ার্কের কোন তথ্য নেই, এদের নিজেদের কোন ইন্টারফেস নেই। নিচের কমান্ডটি রান করলে দেখতে পাবেন লুপব্যাক ছাড়া কোন ইন্টারফেস নেই। 
+
+```bash
+ip netns exec red ip link
+ip netns exec blue ip link
+```
+
+চলুন আমরা দুটি নেমস্পেসের মধ্যে কানেকশন তৈরি করি। আমরা যেভাবে ethernet ইন্টারফেসে তার লাগিয়ে দুটি ডিভাইসকে সংযুক্ত করি সেরকমই আমরা ভার্চুয়াল তার ব্যবহার করে দুটি নেমস্পেসকে যুক্ত করতে পারি। 
+
+![virtual wire](./images/ns-wire.png)
