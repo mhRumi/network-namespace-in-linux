@@ -89,7 +89,7 @@ netns: red
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 8: veth-red@if7: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
     link/ether 0a:dd:75:d2:4a:f0 brd ff:ff:ff:ff:ff:ff link-netns blue
-    
+
 #########################
 
 sudo ip --all netns ip addr
@@ -169,7 +169,6 @@ sudo ip netns exec red ping 192.168.15.2
 
 PING 192.168.15.2 (192.168.15.2) 56(84) bytes of data.
 64 bytes from 192.168.15.2: icmp_seq=1 ttl=64 time=0.055 ms
-64 bytes from 192.168.15.2: icmp_seq=2 ttl=64 time=0.037 ms
-64 bytes from 192.168.15.2: icmp_seq=3 ttl=64 time=0.064 ms
-64 bytes from 192.168.15.2: icmp_seq=4 ttl=64 time=0.055 ms
 ```
+
+এতক্ষণ আমরা দেখলাম কিভাবে দুটি নেমস্পেসের ভেতরে নেটওয়ার্কিং কিন্তু যখন অনেক নেমস্পেস থাকবে এবং প্রত্যেকের সাথে প্রত্যেকের কমিউনিকেশন করতে হবে তখন কিভাবে করবো? এতক্ষণও যদি আমরা এভাবে করি তাহলে ব্যপারটা কমপ্লেক্স হয়ে যাবে। এই সমস্যা সমাধানের জন্য আমরা লিনাক্স ব্রিজের হেল্প নিবো। 
