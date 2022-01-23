@@ -1,4 +1,4 @@
-# ডকার নেটওয়ার্কিং
+# নেটওয়ার্ক নেমস্পেস 
 
 আমরা অনেকেই হয়তো জানি Docker,  নেটওয়ার্ক নেমস্পেস ব্যবহার করে নেটওয়ার্ক আইসোলেসন ইমপ্লিমেন্ট করে। 
 
@@ -14,7 +14,9 @@
 
   ![Process](./images/process-namespace.png)
 
-কিন্তু হোস্ট সলক প্রসেসই দেখতে পারে এমন কি কন্টেইনারের মধ্যে যেসব প্রসেস চলছে সেগুলোও দেখতে পারে। কন্টেইনারের মধ্যে যে প্রসেসগুলো চলে কন্টেইনার সেগুলোকে 1 থেকে নাম্বারিং শুরু করে কিন্তু ওই একই প্রসেস হোস্ট এ অন্য নাম্বারে থাকে এইটা কিভাবে কাজ করে অন্যসময় আলোচনা করবো। 
+কিন্তু হোস্ট সলক প্রসেসই দেখতে পারে এমন কি কন্টেইনারের মধ্যে যেসব প্রসেস চলছে সেগুলোও দেখতে পারে। কন্টেইনারের মধ্যে যে প্রসেসগুলো চলে কন্টেইনার সেগুলোকে 1 থেকে নাম্বারিং শুরু করে কিন্তু ওই একই প্রসেস হোস্ট এ অন্য নাম্বারে থাকে। 
+
+  ![Process](./images/namespace-ps.png)
 
 # নেটওয়ার্ক 
 
@@ -35,7 +37,7 @@ sudo ip netns add blue
 # command to see network namespace
 ip netns
 # to see interfaces under the namespace
-ip netns exec red ip link
+sudo ip netns exec red ip link
 ```
 
 ![namespace](./images/network-ns.png)
@@ -43,8 +45,8 @@ ip netns exec red ip link
 আমরা যেদুটি নেমস্পেস তৈরি করেছি এগুলোর কাছে হোস্টের নেটওয়ার্কের কোন তথ্য নেই, এদের নিজেদের কোন ইন্টারফেস নেই। নিচের কমান্ডটি রান করলে দেখতে পাবেন লুপব্যাক ছাড়া কোন ইন্টারফেস নেই। 
 
 ```bash
-ip netns exec red ip link
-ip netns exec blue ip link
+sudo ip netns exec red ip link
+sudo ip netns exec blue ip link
 ```
 
 চলুন আমরা দুটি নেমস্পেসের মধ্যে কানেকশন তৈরি করি। আমরা যেভাবে ethernet ইন্টারফেসে তার লাগিয়ে দুটি ডিভাইসকে সংযুক্ত করি সেরকমই আমরা ভার্চুয়াল ethernet pair ব্যবহার করে দুটি নেমস্পেসকে যুক্ত করতে পারি। 
@@ -52,7 +54,7 @@ ip netns exec blue ip link
 ![virtual wire](./images/ns-wire.png)
 
 ```bash
-ip link add veth-red type veth peer name veth-blue
+sudo ip link add veth-red type veth peer name veth-blue
 ```
 
 ![virtual wire](./images/ns-wire.png)
@@ -60,15 +62,81 @@ ip link add veth-red type veth peer name veth-blue
 আমরা যেই ভার্চুয়াল ethernet peer তৈরি করেছি এটিকে এখন নেমস্পেসের সাথে যুক্ত করবো
 
 ```
-ip link set veth-red netns red
+sudo ip link set veth-red netns red
 ```
 
 ![virtual wire](./images/ns-connect.png)
 
 ```
-ip link set veth-blue netns blue
+sudo ip link set veth-blue netns blue
 ```
 ![virtual wire](./images/ns-cn-cp.png)
+
+```bash
+ip --all netns exec ip link
+
+# response
+
+
+netns: blue
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+7: veth-blue@if8: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 52:20:68:67:87:bb brd ff:ff:ff:ff:ff:ff link-netns red
+
+netns: red
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+8: veth-red@if7: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 0a:dd:75:d2:4a:f0 brd ff:ff:ff:ff:ff:ff link-netns blue
+    
+#########################
+
+sudo ip --all netns ip addr
+
+# response
+
+
+netns: blue
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+7: veth-blue@if8: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 52:20:68:67:87:bb brd ff:ff:ff:ff:ff:ff link-netns red
+
+netns: red
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+8: veth-red@if7: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether 0a:dd:75:d2:4a:f0 brd ff:ff:ff:ff:ff:ff link-netns blue
+
+netns: prod
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+5: veth-prod@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether 3a:1c:b1:8f:d6:4c brd ff:ff:ff:ff:ff:ff link-netns dev
+
+netns: dev
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+6: veth-dev@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether b6:9c:61:b8:3f:d8 brd ff:ff:ff:ff:ff:ff link-netns prod
+
+
+
+ sudo ip --all netns exec ip addr
+
+netns: blue
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+7: veth-blue@if8: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 52:20:68:67:87:bb brd ff:ff:ff:ff:ff:ff link-netns red
+
+netns: red
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+8: veth-red@if7: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 0a:dd:75:d2:4a:f0 brd ff:ff:ff:ff:ff:ff link-netns blue
+```
 
 আমরা দুটি নেমস্পেসকে ভার্চুয়াল ethernet peer এর মাধ্যমে যুক্ত করে ফেলেছি। এখন নেমস্পেসগুলোতে আমাদের IP address আস্যাইন করতে হবে। 
 
@@ -78,7 +146,30 @@ ip -n blue addr add 192.168.15.2 dev veth-blue
 ```
 
 ```bash
-ip -n red link set veth-red up
-ip -n blue link set veth-blue up
+sudo ip -n red link set veth-red up
+sudo ip -n red link set lo up
+sudo ip -n blue link set veth-blue up
+sudo ip -n blue link set lo up
 ```
 ![IP address](./images/ip-assigned.png)
+
+আমরা নেমস্পেস দুটিতে IP address আস্যাইন করে ফেলেছি কিন্তু এখনো আমরা এক নেমস্পেস থেকে অন্য নেমস্পেসে ping করতে পারবোনা কারণ নেমস্পেস গুলো জানেনা কোন route এ প্যাকেটগুলো পাঠাবে। এখন আমরা route বলে দিবো 
+
+```
+sudo ip netns exec red ip route add default via 192.168.15.1 dev veth-red
+
+sudo ip netns exec blue ip route add default via 192.168.15.2 dev veth-blue
+```
+এখন আমরা রেড নেমস্পেস থেকে ব্লু নেমস্পেসে পিং করতে পারবো 
+
+```bash
+sudo ip netns exec red ping 192.168.15.2
+
+# response
+
+PING 192.168.15.2 (192.168.15.2) 56(84) bytes of data.
+64 bytes from 192.168.15.2: icmp_seq=1 ttl=64 time=0.055 ms
+64 bytes from 192.168.15.2: icmp_seq=2 ttl=64 time=0.037 ms
+64 bytes from 192.168.15.2: icmp_seq=3 ttl=64 time=0.064 ms
+64 bytes from 192.168.15.2: icmp_seq=4 ttl=64 time=0.055 ms
+```
