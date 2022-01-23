@@ -81,3 +81,4 @@ ip -n blue addr add 192.168.15.2 dev veth-blue
 ip -n red link set veth-red up
 ip -n blue link set veth-blue up
 ```
+![IP address](./images/ip-assigned.png)
